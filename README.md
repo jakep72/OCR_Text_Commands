@@ -31,8 +31,11 @@ If your webcam is enabled, a window will appear -- hold a piece of white paper w
 
 -STOP:  close the window and exit the program
 
--SNAP:  save the current frame to a .jpg file in the current working directory (example below)
+-SNAP:  save the current frame to a .jpg file in the current working directory (**example below**)
 
-Or define your own keyword and corresponding action in the example file.
+**__Or define your own keyword and corresponding action in the example file__**
 
-[!img](https://raw.githubusercontent.com/jakep72/OCR_Text_Commands/master/examples/snapshot.jpg)
+&nbsp;
+
+![](https://raw.githubusercontent.com/jakep72/OCR_Text_Commands/master/examples/snapshot.jpg)
+
