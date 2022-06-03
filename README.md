@@ -35,3 +35,4 @@ If your webcam is enabled, a window will appear -- hold a piece of white paper w
 
 Or define your own keyword and corresponding action in the example file.
 
+[!img](https://raw.githubusercontent.com/jakep72/OCR_Text_Commands/master/examples/snapshot.jpg)
