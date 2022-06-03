@@ -7,13 +7,15 @@ Tested on Windows 11 using Anaconda 2022.05
 
 conda create --name <your_env-name> python==3.7
 
+conda activate <your_env_name>
+
 pip install easyocr
 
 pip uninstall opencv-python-headless
 
 pip install opencv-python==4.5.4.60
 
-cd to new env and git clone https://github.com/jakep72/OCR_Text_Commands.git
+cd to new env and git clone https://github.com/jakep72/OCR_Text_Commands.git or download and unzip the folder in <your_env_name>
 
 # Usage
 
