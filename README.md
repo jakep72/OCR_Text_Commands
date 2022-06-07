@@ -3,7 +3,7 @@ OCR_Text_Commands is a fun little tool built on top of easyocr (https://github.c
 
 # Suggested Installation Steps
 
-Tested on Windows 11 using Anaconda 2022.05
+## <ins>Anaconda</ins>
 
 conda create --name <your_env-name> python==3.7
 
@@ -16,6 +16,21 @@ pip uninstall opencv-python-headless
 pip install opencv-python==4.5.4.60
 
 cd to new env and git clone https://github.com/jakep72/OCR_Text_Commands.git or download and unzip the folder in <your_env_name>
+
+## <ins>VENV</ins>
+
+python -m venv <your_env_name>
+
+<your_env_name>\Scripts\activate
+
+cd <your_env_name>
+
+git clone https://github.com/jakep72/OCR_Text_Commands.git
+
+cd OCR_Text_Commands
+
+python -m pip install -r requirements.txt
+
 
 # Usage
 
