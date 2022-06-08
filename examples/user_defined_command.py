@@ -2,7 +2,7 @@ from OCR_Text_Commands.ocr_text_commands import TextCommand
 import webbrowser
 
 #create a TextCommand object
-comms = TextCommand()
+comms = TextCommand(camera_type='web')
 
 #define a simple custom function to open the spotify home page
 def open_spotify():

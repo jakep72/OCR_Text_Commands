@@ -1,17 +1,23 @@
 import cv2
 import easyocr
 import webbrowser
+from PIL.ImageGrab import grab
+import numpy as np
 
 class TextCommand:
     
     def __init__(self,
                  camera_type = 'web',
+                 threshold = 0.2,
+                 x = 200,
+                 y = 200,
+                 width = 700,
+                 height = 700, 
                  language = 'en',
                  decoder = 'greedy',
                  beamWidth = 5,
                  batch_size = 1,
                  workers = 0,
-                 threshold = 0.2,
                  ip_user = None,
                  ip_pass = None,
                  ip_address = None
@@ -20,38 +26,61 @@ class TextCommand:
         """Create a TextCommand object
         
         Description:
-        ----------
+        ------------
         OCR_Text_Commands is a fun little tool built on top of easyocr (https://github.com/JaidedAI/EasyOCR) and opencv that
         allows you to send commands to your computer based on keywords written on a blank piece of paper (preferably using a sharpie on white paper).
         The current set of commands are very simple, but could be expanded to be a bit more complex.  Ultimately, there is
         probably little utility in further development.  Note that performance will be questionable without access to a GPU.
         
         Parameters:
-        ----------
-        camera_type (string): built in webcam (default) or ip camera. Only webcam is supported for now.
+        -----------
+        camera_type : str
+           Source frames/images to look for text in. Built in computer webcam ('web'), ip camera ('ip'), or computer screen ('screen'). 
+           Only webcam and computer screen are supported for now. 
+
+        threshold : float
+            minimum model confidence level for the keyword. If the first word detected is above the threshold value, the command will be executed.
+
+        x : int
+            upper left x coordinate of the bounding box when 'screen' is specified as the image source.
+
+        y : int
+            upper left y coordinate of the bounding box when 'screen' is specified as the image source.
+
+        width : int
+            lower right x coordinate of the bounding box when 'screen' is specified as the image source.
+
+        height : int
+            lower right y coordinate of the bounding box when 'screen' is specified as the image source.
         
+        -----------------------------------------------------------------------------------------------------------
         For all easyocr parameters, more documentation can be found at https://www.jaided.ai/easyocr/documentation/
+        -----------------------------------------------------------------------------------------------------------
         
-        language (string, default = 'en'): easyocr reader class parameter.  English by default and only language supported for now.
+        language : str 
+            easyocr reader class parameter.  English by default and only language supported for now.
         
-        decoder (string, default = 'greedy'): easyocr readtext method parameter.
+        decoder : str
+            easyocr readtext method parameter
         
-        beamWidth (int, default = 5): easyocr readtext method parameter.
+        beamWidth : int
+            easyocr readtext method parameter.
         
-        batch_size (int, default = 1): easyocr readtext method parameter.
+        batch_size : int
+            easyocr readtext method parameter.
         
-        workers (int, default = 0): easyocr readtext method parameter.
-        
-        threshold (float, default = 0.2): minimum model confidence level for the keyword.  
-                                          If the first word detected is above the threshold value, 
-                                          the command will be executed.
+        workers : int
+            easyocr readtext method parameter.
                                           
-        ip_user (string, default = None): username for ip camera
+        ip_user : str
+            username for ip camera
         
-        ip_pass (string, default = None): password for ip camera
+        ip_pass : str
+            password for ip camera
         
-        ip_address (string, default = None): IP address of ip camera
-        
+        ip_address : str
+            IP address of ip camera
+
         """
         
         self.reader = easyocr.Reader([language])
@@ -60,9 +89,13 @@ class TextCommand:
         self.batch_size = batch_size
         self.workers = workers
         self.threshold = threshold
+        self.camera_type = camera_type
+        self.x = x
+        self.y = y
+        self.height = height
+        self.width = width
         
-        
-        
+        # Initialize a videocapture object to access user's built in webcam
         if camera_type == 'web':
             self.cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
         
@@ -71,38 +104,35 @@ class TextCommand:
             conn_string = "rtsp://"+ip_user+":"+ip_pass+"@"+ip_address
             self.cap = cv2.VideoCapture(conn_string)
             
-        
-            
-    
-    def snap_command(self,frame):
+    def __snap_command(self,frame):
         """
         Parameters
         ----------
         frame : array
             Draw text on the frame to notify user a snapshot has been taken.
 
-        
         Saves a .jpg image of the current frame when the snap keyword is detected
 
         """
         cv2.imwrite('snapshot.jpg',frame)
         cv2.putText(frame,"Picture Saved Successfully!",(100,100),cv2.FONT_HERSHEY_PLAIN,2,(255, 0, 0),2)
+
         
-    def search_command(self):
+    def __search_command(self):
         """
         opens a new google search tab in default web browser 
 
         """
         webbrowser.open('www.google.com')
         
-    def mail_command(self):
+    def __mail_command(self):
         """
         opens gmail login page
 
         """
         webbrowser.open('www.google.com/mail')
         
-    def notes_command(self,frame,result):
+    def __notes_command(self,frame,result):
         """
         Parameters
         ----------
@@ -121,14 +151,16 @@ class TextCommand:
                 f.write(result[i+1][1].lower()+" ")
     
     
-    def command_capture(self,user_keyword = None, user_func = None, break_after = True):
+    def command_capture(self, user_keyword = None, user_func = None, break_after = True):
         """
         Parameters
         ----------
-        user_keyword : string, optional
+        user_keyword : str, optional
             user defined keyword to detect. The default is None.
-        user_func : function, optional
+
+        user_func : func, optional
             user defined command to execute if the user defined keyword is detected. The default is None.
+
         break_after : bool, optional
             If true, break the while loop after the user defined command is executed. The default is True.
                 
@@ -138,19 +170,31 @@ class TextCommand:
         search_counter = 0
         mail_counter = 0
         
-        while self.cap.isOpened() == True:
-            ret,frame_BGR = self.cap.read()
+        while True:
             
-            #easyocr requries conversion to RGB, opencv reads BGR by default
+            #use grab method from PIL to access user's screen if 'screen' is specified
+            if self.camera_type == 'screen':
+                frame_BGR = np.array(grab(bbox=(self.x, self.y, self.width, self.height)))
+                
+            #use read method from OpenCV to access user's webcam or an IP Camera
+            elif self.camera_type == 'web' or self.camera_type == 'ip':
+                ret,frame_BGR = self.cap.read()
+
+            else:
+                raise TypeError("camera type invalid or not defined!")
+            
+            #easyocr requries conversion to RGB, OpenCV and PIL read BGR by default
             frame_RGB = cv2.cvtColor(frame_BGR,cv2.COLOR_BGR2RGB)
             
             #call easyocr readtext method to detect and identify text in the frame
             result = self.reader.readtext(frame_RGB, decoder=self.decoder, beamWidth = self.beamWidth,
-                                     batch_size = self.batch_size, workers = self.workers, )
+                                     batch_size = self.batch_size, workers = self.workers)
 
-            #do nothing if words are not detected and if the model confidence has not been met
+            #take no action if a word has not been detected or if the model confidence of the detected word does not meet the specified threshold
             if len(result) > 0 and result[0][2] > self.threshold:
                 
+                #define the keyword as the first word detected in the upper left corner of the frame
+                #and convert all letters to lowercase
                 keyword = result[0][1].lower()
                 
                 #draw a bounding box around the keyword and label the word on the frame so user knows what is being seen
@@ -162,27 +206,27 @@ class TextCommand:
                     break
                 
                 elif keyword == 'snap':
-                    #save frame as jpg image the first word seen is snap
-                    self.snap_command(frame_BGR)
+                    #save frame as jpg image if the first word seen is snap
+                    self.__snap_command(frame_BGR)
                     search_counter = 0
                     mail_counter = 0
                     
                     
                 elif keyword == 'search' and search_counter == 0:
                     #open google search if the first word seen is search
-                    self.search_command()
+                    self.__search_command()
                     search_counter = 1
                     mail_counter = 0
                 
                 elif keyword == 'mail' and mail_counter == 0:
                     #open gmail if the first word seen is mail
-                    self.mail_command()
+                    self.__mail_command()
                     search_counter = 0
                     mail_counter = 1
                 
                 elif keyword == "notes":
                     #save notes to a text file if the first word seen is notes
-                    self.notes_command(frame_BGR, result)        
+                    self.__notes_command(frame_BGR, result)        
                     search_counter = 0
                     mail_counter = 0
                     
@@ -200,9 +244,11 @@ class TextCommand:
             
             #display the frame so the user can see what is going on
             cv2.imshow('Display',frame_BGR)
+        
+        #release frames if accessing webcam or ip camera
+        if self.camera_type == 'web' or self.camera_type == 'ip':
+            self.cap.release()
 
-
-        self.cap.release()
         cv2.destroyAllWindows()
             
         
